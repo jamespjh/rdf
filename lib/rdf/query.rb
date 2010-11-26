@@ -114,15 +114,15 @@ module RDF
       @solutions = @options.delete(:solutions) || Solutions.new
 
       @patterns  = case patterns
-        when Hash  then compile_hash_patterns(patterns.dup)
-        when Array then patterns
-        else []
+      when Hash  then compile_hash_patterns(patterns.dup)
+      when Array then patterns
+      else []
       end
 
       if block_given?
         case block.arity
-          when 0 then instance_eval(&block)
-          else block.call(self)
+        when 0 then instance_eval(&block)
+        else block.call(self)
         end
       end
     end
@@ -168,47 +168,48 @@ module RDF
       @failed = false
       @patterns.each do |pattern|
         case pattern.variable_count
-          when 0 # no variables
-            if pattern.execute(queryable).empty?
-              # return an empty solution sequence:
-              @solutions.clear
-              @failed = true
-              break
-            end
+        when 0 # no variables
+          if pattern.execute(queryable).empty?
+            # return an empty solution sequence:
+            @solutions.clear
+            @failed = true
+            break
+          end
 
-          when 3 # only variables
-            pattern.execute(queryable) do |statement|
-              @solutions << pattern.solution(statement)
-            end
+        when 3 # only variables
+          pattern.execute(queryable) do |statement|
+            @solutions << pattern.solution(statement)
+          end
 
-          else case # 1 or 2 variables
+        else case # 1 or 2 variables
 
-            when !@solutions.have_variables?(pattern.variables.values)
-              if @solutions.empty?
-                pattern.execute(queryable) do |statement|
-                  @solutions << pattern.solution(statement)
-                end
-              else # union
-                old_solutions, @solutions = @solutions, Solutions.new
-                pattern.execute(queryable) do |statement|
-                  old_solutions.each do |solution|
-                    @solutions << solution.merge(pattern.solution(statement))
-                  end
+          when !@solutions.have_variables?(pattern.variables.values)
+            if @solutions.empty?
+              pattern.execute(queryable) do |statement|
+                @solutions << pattern.solution(statement)
+              end
+            else # union
+              old_solutions, @solutions = @solutions, Solutions.new
+              pattern.execute(queryable) do |statement|
+                old_solutions.each do |solution|
+                  @solutions << solution.merge(pattern.solution(statement))
                 end
               end
+            end
 
-            else # intersection
-              @solutions.each_with_index do |solution, index|
-                failed = true
-                pattern.execute(queryable, solution) do |statement|
-                  failed = false
-                  solution.merge!(pattern.solution(statement))
-                end
-                @solutions[index] = nil if failed && !pattern.optional?
+          else # intersection
+            old_solutions, @solutions = @solutions, Solutions.new
+            old_solutions.each do |solution|
+              failed=true
+              pattern.execute(queryable, solution) do |statement|
+                failed = false
+                @solutions << solution.merge(pattern.solution(statement))
               end
-              @solutions.compact! # remove `nil` entries
+              @solutions <<solution if failed && pattern.optional?
+            end
           end
         end
+        break if @solutions.empty? &&! pattern.optional?
       end
       @solutions
     end
@@ -248,7 +249,7 @@ module RDF
     end
     alias_method :each, :each_solution
 
-  protected
+    protected
 
     ##
     # @private
@@ -258,13 +259,13 @@ module RDF
         raise ArgumentError, "invalid hash pattern: #{hash_patterns.inspect}" unless pos.is_a?(Hash)
         pos.each do |p, os|
           case os
-            when Hash
-              patterns += os.keys.map { |o| [s, p, o] }
-              patterns += compile_hash_patterns(os)
-            when Array
-              patterns += os.map { |o| [s, p, o] }
-            else
-              patterns << [s, p, os]
+          when Hash
+            patterns += os.keys.map { |o| [s, p, o] }
+            patterns += compile_hash_patterns(os)
+          when Array
+            patterns += os.map { |o| [s, p, o] }
+          else
+            patterns << [s, p, os]
           end
         end
       end
