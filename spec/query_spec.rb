@@ -36,7 +36,7 @@ describe RDF::Query do
     end
   end
 
-  context "querying with intersecting patterns with multiple solutions literal" do
+  context "querying with intersecting patterns with multiple solutions" do
     it "should return a sequence with an existing literal" do
       graph = RDF::Graph.new do |g|
         g << [EX.x2, EX.p1, EX.x1]
