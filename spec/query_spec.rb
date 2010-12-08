@@ -13,12 +13,12 @@ describe RDF::Query do
 
   context "querying for a specific statement" do
     it "should return an empty solution sequence if the statement does not exist" do
-      graph = RDF::Graph.new do
-        self << [EX.x1, EX.p1, EX.x2]
+      graph = RDF::Graph.new do |g|
+        g << [EX.x1, EX.p1, EX.x2]
       end
-      query = RDF::Query.new do
-        self << [EX.x1, EX.p2, EX.x2] # nonexistent statement
-        self << [:s, :p, :o]
+      query = RDF::Query.new do |q|
+        q << [EX.x1, EX.p2, EX.x2] # nonexistent statement
+        q << [:s, :p, :o]
       end
       query.execute(graph).should == []
     end
@@ -26,11 +26,11 @@ describe RDF::Query do
 
   context "querying for a literal" do
     it "should return a sequence with an existing literal" do
-      graph = RDF::Graph.new do
-        self << [EX.x1, EX.p1, 123.0]
+      graph = RDF::Graph.new do |g|
+        g << [EX.x1, EX.p1, 123.0]
       end
-      query = RDF::Query.new do
-        self << [:s, EX.p1, 123.0]
+      query = RDF::Query.new do |q|
+        q << [:s, EX.p1, 123.0]
       end
       query.execute(graph).map(&:to_hash).should == [{:s => EX.x1}]
     end
@@ -38,15 +38,15 @@ describe RDF::Query do
 
   context "querying with unioned triple patterns" do
     it "should return a union of solution sequences" do
-      graph = RDF::Graph.new do
-        self << [EX.x1, EX.p, 1]
-        self << [EX.x2, EX.p, 2]
+      graph = RDF::Graph.new do |g|
+        g << [EX.x1, EX.p, 1]
+        g << [EX.x2, EX.p, 2]
       end
-      query = RDF::Query.new do
-        self << [:s1, EX.p, :o1]
-        self << [:s2, EX.p, :o2]
+      query = RDF::Query.new do |q|
+        q << [:s1, EX.p, :o1]
+        q << [:s2, EX.p, :o2]
       end
-      # Use set comparison for unodered compare on 1.8.7
+      # Use set comparison for unordered compare on 1.8.7
       query.execute(graph).map(&:to_hash).to_set.should == [
         {:s1 => EX.x1, :o1 => RDF::Literal(1), :s2 => EX.x1, :o2 => RDF::Literal(1)},
         {:s1 => EX.x1, :o1 => RDF::Literal(1), :s2 => EX.x2, :o2 => RDF::Literal(2)},
