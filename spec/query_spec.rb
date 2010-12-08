@@ -36,6 +36,24 @@ describe RDF::Query do
     end
   end
 
+  context "querying with intersecting patterns with multiple solutions literal" do
+    it "should return a sequence with an existing literal" do
+      graph = RDF::Graph.new do |g|
+        g << [EX.x2, EX.p1, EX.x1]
+        g << [EX.x3, EX.p2, EX.x2]
+        g << [EX.x4, EX.p2, EX.x2]
+      end
+      query = RDF::Query.new do |q|
+        q << [:m, EX.p1, EX.x1]
+        q << [:s, EX.p2, :m]
+      end
+      query.execute(graph).map(&:to_hash).should == [
+        {:m => EX.x2, :s => EX.x4},
+        {:m => EX.x2, :s => EX.x3}
+        ]
+    end
+  end
+
   context "querying with unioned triple patterns" do
     it "should return a union of solution sequences" do
       graph = RDF::Graph.new do |g|
